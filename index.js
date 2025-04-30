@@ -261,15 +261,30 @@ if (mek.key && mek.key.remoteJid === 'status@broadcast' && !mek.fromMe) {
 				}
  //================ownerreact==============
     
-if (senderNumber.includes("923427582273") && !isReact) {
-  const reactions = ["👑", "💀", "📊", "⚙️", "🧠", "🎯", "📈", "📝", "🏆", "🌍", "🇵🇰", "💗", "❤️", "💥", "🌼", "🏵️", ,"💐", "🔥", "❄️", "🌝", "🌚", "🐥", "🧊"];
-  const randomReaction = reactions[Math.floor(Math.random() * reactions.length)];
-  m.react(randomReaction);
-}
+if (!isReact && config.AUTO_REACT === 'true') {
+    // Match only valid emojis (excluding numbers, links, and unknown symbols)
+    const emojiRegex = /\p{Emoji_Presentation}/gu; // More strict than \p{Emoji}
+    const messageEmojis = m.body.match(emojiRegex);
 
-  //==========public react============//
-  
-// Auto React for all messages (public and owner)
+    if (messageEmojis && messageEmojis.length > 0) {
+        // Remove duplicates and filter out * and numbers (if any slip through)
+        const uniqueEmojis = [...new Set(messageEmojis)].filter(
+            emoji => !/\*|\d|http|www|\.com|\.org|\.net/i.test(emoji)
+        );
+
+        if (uniqueEmojis.length > 0) {
+            // React with each valid emoji
+            for (const emoji of uniqueEmojis) {
+                try {
+                    await m.react(emoji);
+                } catch (err) {
+                    console.log(`[Failed to react with ${emoji}]: ${err.message}`);
+                }
+            }
+        }
+    }
+    // If no valid emojis found, do nothing (ignore)
+}
 
         
   //==========WORKTYPE============ 
