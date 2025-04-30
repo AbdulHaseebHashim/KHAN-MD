@@ -148,33 +148,27 @@ const port = process.env.PORT || 9090;
   }
     if(mek.message.viewOnceMessageV2)
     mek.message = (getContentType(mek.message) === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
-    const seenStatusSet = new Set();
+    if (mek.key && mek.key.remoteJid === 'status@broadcast' && !mek.fromMe) {
 
-if (mek.key && mek.key.remoteJid === 'status@broadcast' && !mek.fromMe) {
-  const uniqueStatusId = `${mek.key.remoteJid}_${mek.key.id}`;
-
-  if (!seenStatusSet.has(uniqueStatusId)) {
-    seenStatusSet.add(uniqueStatusId);
-
-    if (config.AUTO_STATUS_SEEN === "true") {
-      await conn.readMessages([mek.key]);
-    }
-
-    if (config.AUTO_STATUS_REACT === "true") {
-      const emoji = process.env.FIXED_EMOJI || '❤️‍🩹';
-      const me = await conn.decodeJid(conn.user.id);
-
-      await conn.sendMessage(
-        mek.key.remoteJid,
-        { react: { text: emoji, key: mek.key } },
-        { statusJidList: [mek.key.participant, me] }
-      );
-    }
-
-    // Optional: clear set periodically to avoid memory leak
-    setTimeout(() => seenStatusSet.delete(uniqueStatusId), 60 * 1000); // clears after 1 minute
-  }
+if (config.AUTO_STATUS_SEEN === "true") {
+await conn.readMessages([mek.key]);
 }
+
+if (config.AUTO_STATUS_REACT === "true") {
+const emoji = process.env.FIXED_EMOJI || '❤️‍🩹';
+const me = await conn.decodeJid(conn.user.id);
+
+await conn.sendMessage(  
+  mek.key.remoteJid,  
+  { react: { text: emoji, key: mek.key } },  
+  { statusJidList: [mek.key.participant, me] }  
+);
+
+}
+}
+
+	  
+
   if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true"){
   const user = mek.key.participant
   const text = `${config.AUTO_STATUS_MSG}`
