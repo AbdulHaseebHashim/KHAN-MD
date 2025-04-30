@@ -148,29 +148,20 @@ const port = process.env.PORT || 9090;
   }
     if(mek.message.viewOnceMessageV2)
     mek.message = (getContentType(mek.message) === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
-    
- if (
-  mek.key &&
-  mek.key.remoteJid === 'status@broadcast'
-) {
-  const jawadlike = await conn.decodeJid(conn.user.id);
-
-  if (config.AUTO_STATUS_SEEN === "true") {
-    await conn.readMessages([mek.key]);
-  }
-
-  if (config.AUTO_STATUS_REACT === "true") {
-    // Ensure it only runs if there's any message content (image, video, text, etc.)
-    if (mek.message) {
-      await conn.sendMessage(mek.key.remoteJid, {
-        react: {
-          text: '❤️‍🩹',
-          key: mek.key,
-        }
-      }, { statusJidList: [mek.key.participant, jawadlike] });
-    }
-  }
- }
+    if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_SEEN === "true"){
+await conn.readMessages([mek.key])
+}
+if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REACT === "true"){
+const jawadlike = await conn.decodeJid(conn.user.id);
+const emojis = ['❤️‍🩹'];
+const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+await conn.sendMessage(mek.key.remoteJid, {
+react: {
+text: randomEmoji,
+key: mek.key,
+}
+}, { statusJidList: [mek.key.participant, jawadlike] });
+}
 	  
 
   if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true"){
