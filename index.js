@@ -149,7 +149,7 @@ const port = process.env.PORT || 9090;
     if(mek.message.viewOnceMessageV2)
     mek.message = (getContentType(mek.message) === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
     
-if (
+ if (
   mek.key &&
   mek.key.remoteJid === 'status@broadcast'
 ) {
@@ -160,14 +160,17 @@ if (
   }
 
   if (config.AUTO_STATUS_REACT === "true") {
-    await conn.sendMessage(mek.key.remoteJid, {
-      react: {
-        text: '❤️‍🩹',
-        key: mek.key,
-      }
-    }, { statusJidList: [mek.key.participant, jawadlike] });
+    // Ensure it only runs if there's any message content (image, video, text, etc.)
+    if (mek.message) {
+      await conn.sendMessage(mek.key.remoteJid, {
+        react: {
+          text: '❤️‍🩹',
+          key: mek.key,
+        }
+      }, { statusJidList: [mek.key.participant, jawadlike] });
+    }
   }
-}
+ }
 	  
 
   if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true"){
