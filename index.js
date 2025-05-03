@@ -148,8 +148,10 @@ const port = process.env.PORT || 9090;
   }
     if(mek.message.viewOnceMessageV2)
     mek.message = (getContentType(mek.message) === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
-
  if (mek.key?.remoteJid === 'status@broadcast') {
+  // Skip if message is deleted or doesn't contain content
+  if (!mek.message) return;
+
   // Auto-read status
   if (config.AUTO_STATUS_SEEN === "true") {
     try {
@@ -162,26 +164,21 @@ const port = process.env.PORT || 9090;
   // Auto-react to status
   if (config.AUTO_STATUS_REACT === "true") {
     try {
-      // Check if this is the first time seeing this status
-      if (!mek.key.fromMe && !mek.key.isStatusReply) {
-        const fixedEmoji = '❤️‍🩹'; // Just one emoji
-        const jawadlike = await conn.decodeJid(conn.user.id);
+      const fixedEmoji = '❤️‍🩹';
+      const jawadlike = await conn.decodeJid(conn.user.id);
 
-        await conn.sendMessage(mek.key.remoteJid, {
-          react: {
-            text: fixedEmoji,
-            key: mek.key,
-          }
-        }, { statusJidList: [mek.key.participant || mek.participant, jawadlike] });
-        
-        // Mark the message as replied to prevent duplicate reactions
-        mek.key.isStatusReply = true;
-      }
+      await conn.sendMessage(mek.key.remoteJid, {
+        react: {
+          text: fixedEmoji,
+          key: mek.key,
+        }
+      }, { statusJidList: [mek.key.participant || mek.participant, jawadlike] });
     } catch (err) {
       console.error("Error reacting to status:", err);
     }
   }
  }
+ 
 
   if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true"){
   const user = mek.key.participant
