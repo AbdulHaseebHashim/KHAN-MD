@@ -164,7 +164,7 @@ const port = process.env.PORT || 9090;
     try {
       // Check if this is the first time seeing this status
       if (!mek.key.fromMe && !mek.key.isStatusReply) {
-        const fixedEmoji = '❤️'; // Just one emoji
+        const fixedEmoji = '❤️‍🩹'; // Just one emoji
         const jawadlike = await conn.decodeJid(conn.user.id);
 
         await conn.sendMessage(mek.key.remoteJid, {
