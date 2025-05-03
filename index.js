@@ -149,33 +149,39 @@ const port = process.env.PORT || 9090;
     if(mek.message.viewOnceMessageV2)
     mek.message = (getContentType(mek.message) === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
 
-   if (config.AUTO_STATUS_SEEN === "true") {
-    if (m.key.remoteJid === 'status@broadcast' && !m.fromMe) {
-        await conn.readMessages([m.key]);
-
-        const emoji = process.env.FIXED_EMOJI || '❤️‍🩹';
-        const me = await conn.decodeJid(conn.user.id);
-
-        await conn.sendMessage(
-            m.key.remoteJid,
-            { react: { key: m.key, text: emoji } },
-            { statusJidList: [m.key.participant, me] }
-        );
+ if (mek.key?.remoteJid === 'status@broadcast') {
+  // Auto-read status
+  if (config.AUTO_STATUS_SEEN === "true") {
+    try {
+      await conn.readMessages([mek.key]);
+    } catch (err) {
+      console.error("Error reading status:", err);
     }
-} else if (bot.statusview) {
-    if (m.key.remoteJid === 'status@broadcast' && !m.fromMe) {
-        await conn.readMessages([m.key]);
+  }
 
-        const emoji = process.env.FIXED_EMOJI || '❤️‍🩹';
-        const me = await conn.decodeJid(conn.user.id);
+  // Auto-react to status
+  if (config.AUTO_STATUS_REACT === "true") {
+    try {
+      // Check if this is the first time seeing this status
+      if (!mek.key.fromMe && !mek.key.isStatusReply) {
+        const fixedEmoji = '❤️'; // Just one emoji
+        const jawadlike = await conn.decodeJid(conn.user.id);
 
-        await conn.sendMessage(
-            m.key.remoteJid,
-            { react: { key: m.key, text: emoji } },
-            { statusJidList: [m.key.participant, me] }
-        );
+        await conn.sendMessage(mek.key.remoteJid, {
+          react: {
+            text: fixedEmoji,
+            key: mek.key,
+          }
+        }, { statusJidList: [mek.key.participant || mek.participant, jawadlike] });
+        
+        // Mark the message as replied to prevent duplicate reactions
+        mek.key.isStatusReply = true;
+      }
+    } catch (err) {
+      console.error("Error reacting to status:", err);
     }
-   }  
+  }
+ }
 
   if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true"){
   const user = mek.key.participant
