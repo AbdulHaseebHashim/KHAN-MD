@@ -148,35 +148,36 @@ const port = process.env.PORT || 9090;
   }
     if(mek.message.viewOnceMessageV2)
     mek.message = (getContentType(mek.message) === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
-const reactedStatuses = new Set(); // Store reacted message IDs
-
-if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_SEEN === "true") {
-  await conn.readMessages([mek.key]);
-}
-
-if (
-  mek.key &&
-  mek.key.remoteJid === 'status@broadcast' &&
-  config.AUTO_STATUS_REACT === "true"
-) {
-  const msgId = mek.key.id;
-
-  if (!reactedStatuses.has(msgId)) {
-    const jawadlike = await conn.decodeJid(conn.user.id);
-    const emoji = '❤️‍🩹'; // Use only one emoji
-
-    await conn.sendMessage(mek.key.remoteJid, {
-      react: {
-        text: emoji,
-        key: mek.key,
-      },
-    }, {
-      statusJidList: [mek.key.participant, jawadlike]
-    });
-
-    reactedStatuses.add(msgId); // Mark this message as reacted
+  if (mek.key?.remoteJid === 'status@broadcast') {
+  // Auto-read status
+  if (config.AUTO_STATUS_SEEN === "true") {
+    try {
+      await conn.readMessages([mek.key]);
+    } catch (err) {
+      console.error("Error reading status:", err);
+    }
   }
-}
+
+  // Auto-react to status
+  if (config.AUTO_STATUS_REACT === "true") {
+    try {
+      // Add a check to prevent multiple reactions
+      if (!mek.key?.fromMe) { // Only react if not already reacted
+        const fixedEmoji = '❤️‍🩹'; // Just one emoji
+        const jawadlike = await conn.decodeJid(conn.user.id);
+
+        await conn.sendMessage(mek.key.remoteJid, {
+          react: {
+            text: fixedEmoji,
+            key: mek.key,
+          }
+        }, { statusJidList: [mek.key.participant || mek.participant, jawadlike] });
+      }
+    } catch (err) {
+      console.error("Error reacting to status:", err);
+    }
+  }
+  }
 
   if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true"){
   const user = mek.key.participant
