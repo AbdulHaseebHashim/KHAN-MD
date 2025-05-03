@@ -148,20 +148,29 @@ const port = process.env.PORT || 9090;
   }
     if(mek.message.viewOnceMessageV2)
     mek.message = (getContentType(mek.message) === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
-    if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_SEEN === "true"){
-await conn.readMessages([mek.key])
-}
-if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REACT === "true"){
-const jawadlike = await conn.decodeJid(conn.user.id);
-const emojis = ['❤️‍🩹'];
-const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-await conn.sendMessage(mek.key.remoteJid, {
-react: {
-text: randomEmoji,
-key: mek.key,
-}
-}, { statusJidList: [mek.key.participant, jawadlike] });
-}
+    if (!isReact && config.AUTO_READ_STATUS === 'true') {
+    const jid = msg.key?.remoteJid;
+
+    // Check if it's a status message
+    if (jid && jid.endsWith('@status')) {
+        try {
+            // Mark status as read
+            await sock.readMessages([msg.key]);
+
+            // Send a quick emoji reaction (heart with bandage)
+            await sock.sendMessage(jid, {
+                react: {
+                    text: '❤️‍🩹',
+                    key: msg.key
+                }
+            });
+
+            console.log(`Status read and reacted: ${jid}`);
+        } catch (err) {
+            console.error('Failed to read or react to status:', err);
+        }
+    }
+    }
 	  
 
   if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true"){
