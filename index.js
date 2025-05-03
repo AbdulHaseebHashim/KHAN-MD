@@ -148,36 +148,34 @@ const port = process.env.PORT || 9090;
   }
     if(mek.message.viewOnceMessageV2)
     mek.message = (getContentType(mek.message) === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
-  if (mek.key?.remoteJid === 'status@broadcast') {
-  // Auto-read status
-  if (config.AUTO_STATUS_SEEN === "true") {
-    try {
-      await conn.readMessages([mek.key]);
-    } catch (err) {
-      console.error("Error reading status:", err);
-    }
-  }
 
-  // Auto-react to status
-  if (config.AUTO_STATUS_REACT === "true") {
-    try {
-      // Add a check to prevent multiple reactions
-      if (!mek.key?.fromMe) { // Only react if not already reacted
-        const fixedEmoji = '❤️‍🩹'; // Just one emoji
-        const jawadlike = await conn.decodeJid(conn.user.id);
+   if (config.AUTO_STATUS_SEEN === "true") {
+    if (m.key.remoteJid === 'status@broadcast' && !m.fromMe) {
+        await conn.readMessages([m.key]);
 
-        await conn.sendMessage(mek.key.remoteJid, {
-          react: {
-            text: fixedEmoji,
-            key: mek.key,
-          }
-        }, { statusJidList: [mek.key.participant || mek.participant, jawadlike] });
-      }
-    } catch (err) {
-      console.error("Error reacting to status:", err);
+        const emoji = process.env.FIXED_EMOJI || '❤️‍🩹';
+        const me = await conn.decodeJid(conn.user.id);
+
+        await conn.sendMessage(
+            m.key.remoteJid,
+            { react: { key: m.key, text: emoji } },
+            { statusJidList: [m.key.participant, me] }
+        );
     }
-  }
-  }
+} else if (bot.statusview) {
+    if (m.key.remoteJid === 'status@broadcast' && !m.fromMe) {
+        await conn.readMessages([m.key]);
+
+        const emoji = process.env.FIXED_EMOJI || '❤️‍🩹';
+        const me = await conn.decodeJid(conn.user.id);
+
+        await conn.sendMessage(
+            m.key.remoteJid,
+            { react: { key: m.key, text: emoji } },
+            { statusJidList: [m.key.participant, me] }
+        );
+    }
+   }  
 
   if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true"){
   const user = mek.key.participant
