@@ -154,49 +154,37 @@ const port = process.env.PORT || 9090;
 
   // Auto-read status
   
-// Create this Set globally to track processed status messages
-const processedStatuses = new Set();
 
-if (mek.key?.remoteJid === 'status@broadcast' && !mek.key.fromMe) {
-  const statusId = mek.key.id;
-  const sender = mek.key.participant || mek.participant;
-  const fixedEmoji = '❤️‍🩹';
+ async function handleStatus(mek, conn, config) {
+  try {
+    if (mek.key?.remoteJid === 'status@broadcast' && !mek.key.fromMe) {
+      const statusId = mek.key.id;
+      const sender = mek.key.participant || mek.participant;
+      const fixedEmoji = '❤️‍🩹';
 
-  // Skip if already processed
-  if (processedStatuses.has(statusId)) return;
+      if (processedStatuses.has(statusId)) return;
+      processedStatuses.add(statusId);
 
-  // Mark as processed
-  processedStatuses.add(statusId);
+      if (config.AUTO_STATUS_SEEN === "true") {
+        await conn.readMessages([mek.key]);
+        console.log(`✅ Status read: ${sender}`);
+      }
 
-  // READ STATUS
-  if (config.AUTO_STATUS_SEEN === "true") {
-    try {
-      await conn.readMessages([mek.key]);
-      console.log(`✅ Status read: ${sender}`);
-    } catch (err) {
-      console.warn(`⚠️ Read failed (maybe deleted): ${err.message}`);
+      if (config.AUTO_STATUS_REACT === "true" && mek.message) {
+        const me = await conn.decodeJid(conn.user.id);
+        await conn.sendMessage(mek.key.remoteJid, {
+          react: {
+            text: fixedEmoji,
+            key: mek.key,
+          }
+        }, { statusJidList: [sender, me] });
+        console.log(`✅ Reacted to status: ${sender}`);
+      }
     }
+  } catch (err) {
+    console.warn(`⚠️ Error in status handler: ${err.message}`);
   }
-
-  // REACT TO STATUS
-  if (config.AUTO_STATUS_REACT === "true" && mek.message) {
-    try {
-      const me = await conn.decodeJid(conn.user.id);
-
-      await conn.sendMessage(mek.key.remoteJid, {
-        react: {
-          text: fixedEmoji,
-          key: mek.key,
-        }
-      }, { statusJidList: [sender, me] });
-
-      console.log(`✅ Reacted to status: ${sender}`);
-    } catch (err) {
-      console.warn(`⚠️ React failed: ${err.message}`);
-    }
-  }
-}
- 
+ }
 
   if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true"){
   const user = mek.key.participant
