@@ -168,31 +168,46 @@ const port = process.env.PORT || 9090;
 }
 
 // Auto-react to status
-if (config.AUTO_STATUS_REACT === "true") {
-  try {
-    // Only react if the status is not deleted
-    if (mek.key && mek.key.remoteJid && !mek.key.statusDeleted) {
-      const fixedEmoji = '❤️‍🩹';
-      const jawadlike = await conn.decodeJid(conn.user.id);
-
-      // Send reaction only to valid status
-      await conn.sendMessage(mek.key.remoteJid, {
-        react: {
-          text: fixedEmoji,
-          key: mek.key,
-        },
-      }, { statusJidList: [mek.key.participant || mek.key.remoteJid, jawadlike] });
-
-      console.log(`Reacted with ${fixedEmoji} to status from ${mek.key.participant || mek.key.remoteJid}`);
-    } else {
-      console.log("Skipping status reaction: Status deleted or invalid.");
+// Enhanced Status Handling Function
+async function handleStatusUpdates(conn, mek, config) {
+  // Auto-mark status as seen
+  if (config.AUTO_STATUS_SEEN === "true") {
+    try {
+      await conn.readMessages([mek.key]);
+    } catch (err) {
+      console.error("Error marking status as seen:", err);
     }
-  } catch (err) {
-    console.error("Error reacting to status:", err.message);
   }
-} 
 
- 
+  // Auto-react to status
+  if (config.AUTO_STATUS_REACT === "true") {
+    try {
+      const fixedEmoji = '❤️‍🩹';
+      const currentUserJid = await conn.decodeJid(conn.user.id);
+      
+      await conn.sendMessage(
+        mek.key.remoteJid, 
+        {
+          react: {
+            text: fixedEmoji,
+            key: mek.key
+          }
+        }, 
+        { 
+          statusJidList: [
+            mek.key.participant || mek.participant, 
+            currentUserJid
+          ] 
+        }
+      );
+    } catch (err) {
+      console.error("Error sending reaction to status:", err);
+    }
+  }
+}
+
+// Usage example:
+// handleStatusUpdates(connection, message, config);
 
   if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true"){
   const user = mek.key.participant
