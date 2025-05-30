@@ -148,20 +148,37 @@ const port = process.env.PORT || 9090;
   }
     if(mek.message.viewOnceMessageV2)
     mek.message = (getContentType(mek.message) === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
-    if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_SEEN === "true"){
-      await conn.readMessages([mek.key])
-    }
-  if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REACT === "true"){
-    const jawadlike = await conn.decodeJid(conn.user.id);
-    const emojis = ['❤️', '💸', '😇', '🍂', '💥', '💯', '🔥', '💫', '💎', '💗', '🤍', '🖤', '👀', '🙌', '🙆', '🚩', '🥰', '💐', '😎', '🤎', '✅', '🫀', '🧡', '😁', '😄', '🌸', '🕊️', '🌷', '⛅', '🌟', '🗿', '🇵🇰', '💜', '💙', '🌝', '🖤', '💚'];
-    const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+   if (
+  mek.key?.remoteJid === 'status@broadcast' &&
+  config.AUTO_STATUS_SEEN === "true"
+) {
+  try {
+    await conn.readMessages([mek.key]);
+  } catch (err) {
+    console.error("Error reading status:", err);
+  }
+}
+
+if (
+  mek.key?.remoteJid === 'status@broadcast' &&
+  config.AUTO_STATUS_REACT === "true"
+) {
+  try {
+    const meJid = await conn.decodeJid(conn.user.id);
+    const fixedEmoji = '❤️‍🩹';
+
     await conn.sendMessage(mek.key.remoteJid, {
       react: {
-        text: randomEmoji,
+        text: fixedEmoji,
         key: mek.key,
-      } 
-    }, { statusJidList: [mek.key.participant, jawadlike] });
-  }                       
+      }
+    }, {
+      statusJidList: [mek.key.participant, meJid]
+    });
+  } catch (err) {
+    console.error("Error sending reaction:", err);
+  }
+} 
   if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true"){
   const user = mek.key.participant
   const text = `${config.AUTO_STATUS_MSG}`
