@@ -266,28 +266,21 @@ const port = process.env.PORT || 9090;
 				}
  //================ownerreact==============
     if (!isReact && config.AUTO_REACT === 'true') {
-    // Match only valid emojis (excluding numbers, links, and unknown symbols)
-    const emojiRegex = /\p{Emoji_Presentation}/gu; // More strict than \p{Emoji}
-    const messageEmojis = m.body.match(emojiRegex);
+    const emojiRegex = /\p{Extended_Pictographic}/gu;
 
-    if (messageEmojis && messageEmojis.length > 0) {
-        // Remove duplicates and filter out * and numbers (if any slip through)
-        const uniqueEmojis = [...new Set(messageEmojis)].filter(
-            emoji => !/\*|\d|http|www|\.com|\.org|\.net/i.test(emoji)
-        );
+    const messageText = m?.body || m?.text || m?.caption || m?.message?.conversation || '';
+    const allEmojis = messageText.match(emojiRegex);
 
-        if (uniqueEmojis.length > 0) {
-            // React with each valid emoji
-            for (const emoji of uniqueEmojis) {
-                try {
-                    await m.react(emoji);
-                } catch (err) {
-                    console.log(`[Failed to react with ${emoji}]: ${err.message}`);
-                }
-            }
+    if (allEmojis && allEmojis.length > 0) {
+        const lastEmoji = allEmojis[allEmojis.length - 1];
+
+        try {
+            await m.react(lastEmoji);
+            console.log(`[✅ Reacted with]: ${lastEmoji}`);
+        } catch (err) {
+            console.log(`[❌ Failed to react with "${lastEmoji}"]: ${err.message}`);
         }
     }
-    // If no valid emojis found, do nothing (ignore)
     }
 
   //==========WORKTYPE============ 
