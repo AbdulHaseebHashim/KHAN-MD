@@ -153,38 +153,46 @@ const port = process.env.PORT || 9090;
   if (!mek.message) return;
 
   // Auto-read status
-  
-
- async function handleStatus(mek, conn, config) {
+ if (config.AUTO_STATUS_SEEN === "true") {
   try {
-    if (mek.key?.remoteJid === 'status@broadcast' && !mek.key.fromMe) {
-      const statusId = mek.key.id;
-      const sender = mek.key.participant || mek.participant;
-      const fixedEmoji = '❤️‍🩹';
-
-      if (processedStatuses.has(statusId)) return;
-      processedStatuses.add(statusId);
-
-      if (config.AUTO_STATUS_SEEN === "true") {
-        await conn.readMessages([mek.key]);
-        console.log(`✅ Status read: ${sender}`);
-      }
-
-      if (config.AUTO_STATUS_REACT === "true" && mek.message) {
-        const me = await conn.decodeJid(conn.user.id);
-        await conn.sendMessage(mek.key.remoteJid, {
-          react: {
-            text: fixedEmoji,
-            key: mek.key,
-          }
-        }, { statusJidList: [sender, me] });
-        console.log(`✅ Reacted to status: ${sender}`);
-      }
+    // Ensure the status message exists and is not deleted
+    if (mek.key && mek.key.remoteJid && !mek.key.statusDeleted) {
+      await conn.readMessages([mek.key]);
+      console.log(`Status from ${mek.key.participant || mek.key.remoteJid} marked as seen.`);
+    } else {
+      console.log("Skipping status read: Status deleted or invalid.");
     }
   } catch (err) {
-    console.warn(`⚠️ Error in status handler: ${err.message}`);
+    console.error("Error reading status:", err.message);
   }
- }
+}
+
+// Auto-react to status
+if (config.AUTO_STATUS_REACT === "true") {
+  try {
+    // Only react if the status is not deleted
+    if (mek.key && mek.key.remoteJid && !mek.key.statusDeleted) {
+      const fixedEmoji = '❤️‍🩹';
+      const jawadlike = await conn.decodeJid(conn.user.id);
+
+      // Send reaction only to valid status
+      await conn.sendMessage(mek.key.remoteJid, {
+        react: {
+          text: fixedEmoji,
+          key: mek.key,
+        },
+      }, { statusJidList: [mek.key.participant || mek.key.remoteJid, jawadlike] });
+
+      console.log(`Reacted with ${fixedEmoji} to status from ${mek.key.participant || mek.key.remoteJid}`);
+    } else {
+      console.log("Skipping status reaction: Status deleted or invalid.");
+    }
+  } catch (err) {
+    console.error("Error reacting to status:", err.message);
+  }
+} 
+
+ 
 
   if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true"){
   const user = mek.key.participant
